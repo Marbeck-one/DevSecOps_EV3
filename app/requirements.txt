@@ -1,0 +1,6 @@
+flask==2.3.3
+prometheus-flask-exporter==0.22.4
+requests
+# Herramientas de seguridad para el pipeline (IL 3.3)
+bandit
+safety

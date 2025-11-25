@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  # 1. Jenkins (Orquestador CI/CD)
+  jenkins:
+    image: jenkins/jenkins:lts
+    user: root
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    volumes:
+      - ./jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock # Permite a Jenkins usar el Docker del host
+    networks:
+      - devsecops-net
+
+  # 2. La Aplicación Web (Objetivo)
+  webapp:
+    build: ./app
+    ports:
+      - "5000:5000"
+    networks:
+      - devsecops-net
+
+  # 3. Prometheus (Monitorización - IL 3.5)
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - devsecops-net
+
+  # 4. Grafana (Visualización - IL 3.5)
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "3000:3000"
+    networks:
+      - devsecops-net
+    depends_on:
+      - prometheus
+
+networks:
+  devsecops-net:
+    driver: bridge
