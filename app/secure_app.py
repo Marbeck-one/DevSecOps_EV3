@@ -4,6 +4,7 @@ from prometheus_flask_exporter import PrometheusMetrics # Para monitoreo
 import sqlite3
 import os
 import hashlib
+import secrets
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -74,6 +75,36 @@ def submit_comment():
     conn.close()
 
     return redirect(url_for('dashboard'))
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    # Generar token CSRF al cargar la página de login y guardarlo en sesión
+    if request.method == 'GET':
+        if 'csrf_token' not in session:
+            session['csrf_token'] = secrets.token_hex(16)
+            
+    if request.method == 'POST':
+        # ... (tu lógica de validación de usuario) ...
+        # Si el login es exitoso:
+            session['user_id'] = user['id']
+            session['role'] = user['role']
+            # Regenerar token por seguridad al loguearse
+            session['csrf_token'] = secrets.token_hex(16) 
+            return redirect(url_for('dashboard'))
+            
+    return render_template('login.html')
+
+@app.route('/submit_comment', methods=['POST'])
+def submit_comment():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+        
+    # --- VALIDACIÓN CSRF ---
+    token_formulario = request.form.get('csrf_token')
+    token_sesion = session.get('csrf_token')
+    
+    if not token_formulario or token_formulario != token_sesion:
+        return "Error de seguridad: Token CSRF inválido", 403
 
 # Inicialización de DB si se ejecuta directo
 if __name__ == '__main__':
